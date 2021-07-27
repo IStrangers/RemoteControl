@@ -22,11 +22,18 @@ function App() {
   }
 
   function getCurrentImageFrame(){
+    let AppHagtControlScreen;
+    let ctx;
+    let img = new Image();
+    img.onload = function(){
+      ctx.drawImage(img,0,0);
+    }
     let webScoket = new WBScoket({
-      socketUrl: 'ws://localhost:8888/Connection',
+      socketUrl: 'ws://localhost:8888/Connection?currentTime=' + new Date().getTime(),
       timeout: 5000,
       socketMessage: (receive) => {
-        console.log(receive);  //后端返回的数据，渲染页面
+        let bolbImage = receive.data;
+        img.src = window.URL.createObjectURL(bolbImage);
       },
       socketClose: (msg) => {
         console.log(msg);
@@ -36,6 +43,8 @@ function App() {
       },
       socketOpen: () => {
         console.log('连接建立成功');
+        AppHagtControlScreen = document.getElementById('AppHagtControlScreen');
+        ctx = AppHagtControlScreen.getContext('2d');
       }
     });
     try {
@@ -49,8 +58,8 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <canvas className="App-hagt-control-screen"></canvas>
-        <img src={logo} className="App-logo" alt="logo" />
+        <canvas id="AppHagtControlScreen" className="App-hagt-control-screen"></canvas>
+        <img id="AppLogo" src={logo} className="App-logo" alt="logo" />
         <div >{randomCode}</div>
         <br/>
         <Button onClick={getRandomCode} variant="contained" color="primary" disableElevation>

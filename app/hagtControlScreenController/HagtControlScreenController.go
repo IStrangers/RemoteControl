@@ -1,13 +1,16 @@
 package hagtControlScreenController
 
 import (
+	"fmt"
 	"golang.org/x/net/websocket"
 	"log"
 	"net/http"
+	"os"
+	"sync"
 )
 
 var (
-	conns = make(map[string]*websocket.Conn)
+	conns sync.Map
 )
 
 func Start() {
@@ -23,14 +26,33 @@ func Start() {
   连接
 */
 func connection(conn *websocket.Conn) {
-	form := conn.Request().Form
-	print(form)
-	conns[""] = conn
+	params := conn.Request().URL.Query()
+	print(params)
+	currentTime := params.Get("currentTime")
+	conns.Store(currentTime, conn)
+	sendCurrentImageFrame()
 }
 
 /**
-  获取当前图像帧
+  发送当前图像帧
 */
-func getCurrentImageFrame() {
+func sendCurrentImageFrame() {
+	file, _ := os.OpenFile("C:\\Users\\Administrator\\Pictures\\Saved Pictures\\t0102f87f6ba772d45e.gif", os.O_RDWR, 0666)
+	fileStat, _ := file.Stat()
+	data := make([]byte, fileStat.Size())
+	file.Read(data)
+	Foreach(Send, data)
+}
 
+func Foreach(f func(conn *websocket.Conn, msg interface{}), v interface{}) {
+	conns.Range(func(k, conn interface{}) bool {
+		f(conn.(*websocket.Conn), v)
+		return true
+	})
+}
+
+func Send(conn *websocket.Conn, msg interface{}) {
+	if err := websocket.Message.Send(conn, msg); err != nil {
+		fmt.Println("Send msg error: ", err)
+	}
 }
