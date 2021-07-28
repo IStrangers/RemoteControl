@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 )
 
@@ -24,25 +25,6 @@ var (
 	conns sync.Map
 )
 
-func Start() {
-	go func() {
-		http.HandleFunc("/Connection", connection)
-		log.Println("HagtControlScreenController Listening and serving HTTP on :8888")
-		err := http.ListenAndServe(":8888", nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	for {
-		img, _ := screenshot.CaptureDisplay(0)
-		buf := new(bytes.Buffer)
-		png.Encode(buf, img)
-		data := buf.Bytes()
-		sendCurrentImageFrame(data)
-		//time.Sleep(1 * time.Second)
-	}
-}
-
 /**
   连接
 */
@@ -58,6 +40,33 @@ func connection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conns.Store(currentTime, conn)
+}
+
+func Start() {
+	go func() {
+		http.HandleFunc("/Connection", connection)
+		log.Println("HagtControlScreenController Listening and serving HTTP on :8888")
+		err := http.ListenAndServe(":8888", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	go func() {
+		for {
+			img, _ := screenshot.CaptureDisplay(0)
+			buf := new(bytes.Buffer)
+			png.Encode(buf, img)
+			data := buf.Bytes()
+			sendCurrentImageFrame(data)
+			//saveCurrentImageFrame(data)
+		}
+	}()
+}
+
+func saveCurrentImageFrame(data []byte) {
+	file, _ := os.Create("./static/CurrentImageFrame.png")
+	file.Write(data)
+	file.Close()
 }
 
 /**

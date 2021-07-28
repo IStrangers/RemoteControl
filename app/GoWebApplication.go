@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	go hagtControlScreenController.Start()
+	hagtControlScreenController.Start()
 
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
@@ -27,6 +27,7 @@ func main() {
 		// 处理请求
 		c.Next()
 	})
+	r.Static("/static", "./static")
 	r.GET("/GetRandomNumber", controller.GetRandomNumber)
 	r.Run()
 }

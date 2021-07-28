@@ -1,13 +1,13 @@
-/*import logo from './logo.svg';*/
+//import logo from './logo.svg';
 import './App.css';
-/*import Button from '@material-ui/core/Button';*/
-import axios from "axios";
-import {useState} from 'react';
+//import Button from '@material-ui/core/Button';
+// import axios from "axios";
+// import {useState} from 'react';
 import WBScoket from './websocket/WebSocket';
 
 function App() {
 
-  const [randomCode, setRandomCode] = useState("");
+/*  const [randomCode, setRandomCode] = useState("");
 
   function getRandomCode () {
     axios.get("http://192.168.0.128:8080/GetRandomNumber")
@@ -19,7 +19,7 @@ function App() {
     .catch(error => {
       console.log(error);
     });
-  }
+  }*/
 
   function getCurrentImageFrame(){
     let AppHagtControlScreen;
