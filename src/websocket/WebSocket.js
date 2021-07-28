@@ -8,7 +8,6 @@ module.exports =  class webSocket {
         this.param = param;
         this.reconnectCount = 0;
         this.socket = null;
-        this.isSucces=true;
     }
     connection = () => {
         let {socketUrl} = this.param;
@@ -34,8 +33,6 @@ module.exports =  class webSocket {
     // 连接成功触发
     onopen = () => {
         let {socketOpen} = this.param;
-        //连接成功将标识符改为false
-        this.isSucces = false;
         socketOpen && socketOpen();
     };
     // 后端向前端推得数据
@@ -45,16 +42,8 @@ module.exports =  class webSocket {
     };
     // 关闭连接触发
     onclose = (e) => {
-        //关闭将标识符改为true
-        this.isSucces = true;
         let {socketClose} = this.param;
         socketClose && socketClose(e);
-        // 根据后端返回的状态码做操作
-        // 我的项目是当前页面打开两个或者以上，就把当前以打开的socket关闭
-        // 否则就20秒重连一次，直到重连成功为止
-        if(e.code === '500'){
-            this.socket.close();
-        }
     };
     onerror = (e) => {
         // socket连接报错触发
