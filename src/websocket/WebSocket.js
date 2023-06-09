@@ -1,9 +1,9 @@
 /**
  * 参数：[socketOpen|socketClose|socketMessage|socketError] = func，[socket连接成功时触发|连接关闭|发送消息|连接错误]
  * timeout：连接超时时间
- * @type {module.webSocket}
+ * @type {module.CustomWebSocket}
  */
-module.exports =  class webSocket {
+module.exports =  class CustomWebSocket {
     constructor(param = {}) {
         this.param = param;
         this.reconnectCount = 0;

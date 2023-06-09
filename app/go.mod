@@ -1,22 +1,30 @@
-module go-web/app
+module app
 
-go 1.15
+go 1.19
 
 require (
-	github.com/gin-gonic/gin v1.7.2
-	github.com/go-playground/validator/v10 v10.7.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/gorilla/websocket v1.4.2
-	github.com/json-iterator/go v1.1.11 // indirect
+	github.com/go-vgo/robotgo v0.100.10
+	github.com/gorilla/websocket v1.5.0
 	github.com/kbinani/screenshot v0.0.0-20210720154843-7d3a670d8329
-	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/mattn/go-isatty v0.0.13 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/ugorji/go v1.2.6 // indirect
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
-	golang.org/x/text v0.3.6 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+)
+
+require (
+	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/jezek/xgb v0.0.0-20210312150743-0e0f116e1240 // indirect
+	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
+	github.com/otiai10/gosseract v2.2.1+incompatible // indirect
+	github.com/robotn/gohook v0.31.3 // indirect
+	github.com/robotn/xgb v0.0.0-20190912153532-2cb92d044934 // indirect
+	github.com/robotn/xgbutil v0.0.0-20190912154524-c861d6f87770 // indirect
+	github.com/shirou/gopsutil v3.21.10+incompatible // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
+	github.com/vcaesar/gops v0.21.3 // indirect
+	github.com/vcaesar/imgo v0.30.0 // indirect
+	github.com/vcaesar/keycode v0.10.0 // indirect
+	github.com/vcaesar/tt v0.20.0 // indirect
+	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
+	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
 )

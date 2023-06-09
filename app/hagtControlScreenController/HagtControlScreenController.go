@@ -2,12 +2,12 @@ package hagtControlScreenController
 
 import (
 	"bytes"
+	"github.com/go-vgo/robotgo"
 	"github.com/gorilla/websocket"
 	"github.com/kbinani/screenshot"
 	"image/png"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 )
 
@@ -25,9 +25,66 @@ var (
 	conns sync.Map
 )
 
-/**
-  连接
-*/
+func Start() {
+	go handlingFrame()
+	go handlingEvent()
+	startServer()
+}
+
+/*
+*发送当前图像帧
+ */
+func handlingFrame() {
+	for {
+		img, _ := screenshot.CaptureDisplay(0)
+		buf := new(bytes.Buffer)
+		png.Encode(buf, img)
+		data := buf.Bytes()
+		sendCurrentImageFrame(data)
+	}
+}
+
+func sendCurrentImageFrame(data []byte) {
+	Foreach(Send, data)
+}
+
+func Foreach(f func(k any, conn *websocket.Conn, data []byte), data []byte) {
+	conns.Range(func(k, conn any) bool {
+		f(k, conn.(*websocket.Conn), data)
+		return true
+	})
+}
+
+func Send(k any, conn *websocket.Conn, data []byte) {
+	if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		conns.Delete(k)
+		conn.Close()
+	}
+}
+
+func handlingEvent() {
+	for {
+		conns.Range(func(k, conn any) bool {
+			socketConn := conn.(*websocket.Conn)
+			messageType, data, err := socketConn.ReadMessage()
+			if err != nil {
+				return false
+			}
+			switch messageType {
+			case websocket.TextMessage:
+				key := string(data)
+				robotgo.KeyDown(key)
+			case websocket.BinaryMessage:
+				println(data)
+			}
+			return true
+		})
+	}
+}
+
+/*
+*连接
+ */
 func connection(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	print(params)
@@ -42,50 +99,11 @@ func connection(w http.ResponseWriter, r *http.Request) {
 	conns.Store(currentTime, conn)
 }
 
-func Start() {
-	go func() {
-		http.HandleFunc("/Connection", connection)
-		log.Println("HagtControlScreenController Listening and serving HTTP on :8888")
-		err := http.ListenAndServe(":8888", nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	go func() {
-		for {
-			img, _ := screenshot.CaptureDisplay(0)
-			buf := new(bytes.Buffer)
-			png.Encode(buf, img)
-			data := buf.Bytes()
-			sendCurrentImageFrame(data)
-			//saveCurrentImageFrame(data)
-		}
-	}()
-}
-
-func saveCurrentImageFrame(data []byte) {
-	file, _ := os.Create("./static/CurrentImageFrame.png")
-	file.Write(data)
-	file.Close()
-}
-
-/**
-  发送当前图像帧
-*/
-func sendCurrentImageFrame(data []byte) {
-	Foreach(Send, data)
-}
-
-func Foreach(f func(k interface{}, conn *websocket.Conn, data []byte), data []byte) {
-	conns.Range(func(k, conn interface{}) bool {
-		f(k, conn.(*websocket.Conn), data)
-		return true
-	})
-}
-
-func Send(k interface{}, conn *websocket.Conn, data []byte) {
-	if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
-		conns.Delete(k)
-		conn.Close()
+func startServer() {
+	http.HandleFunc("/Connection", connection)
+	log.Println("HagtControlScreenController Listening and serving HTTP on :8888")
+	err := http.ListenAndServe(":8888", nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
