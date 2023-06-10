@@ -12,7 +12,7 @@ function App() {
       AppHagtControlScreen.height = window.innerHeight;
       ctx.drawImage(img,0,0,AppHagtControlScreen.width,AppHagtControlScreen.height);
     }
-    const webScoket = new WBScoket({
+    const webSocket = new WBScoket({
       socketUrl: 'ws://localhost:8888/Connection?currentTime=' + new Date().getTime(),
       timeout: 5000,
       socketMessage: (receive) => {
@@ -22,7 +22,7 @@ function App() {
       },
       socketClose: (msg) => {
         console.log(msg);
-        webScoket.close();
+        webSocket.close();
       },
       socketError: () => {
         console.log('连接建立失败');
@@ -39,10 +39,14 @@ function App() {
       }
     });
     try {
-      webScoket.connection();
+      webSocket.connection();
     } catch (e) {
       console.log(e);
     }
+  }
+
+  const onKeyDown = (event) => {
+    debugger
   }
 
   window.onload = getCurrentImageFrame;
@@ -50,7 +54,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <canvas id="AppHagtControlScreen" className="App-hagt-control-screen"></canvas>
+        <canvas id="AppHagtControlScreen" className="App-hagt-control-screen" onKeyDown={onKeyDown}></canvas>
       </header>
     </div>
   );

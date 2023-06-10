@@ -2,6 +2,7 @@ package hagtControlScreenController
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/go-vgo/robotgo"
 	"github.com/gorilla/websocket"
 	"github.com/kbinani/screenshot"
@@ -72,14 +73,106 @@ func handlingEvent() {
 			}
 			switch messageType {
 			case websocket.TextMessage:
-				key := string(data)
-				robotgo.KeyDown(key)
+				handlingTextMessage(data)
+				break
 			case websocket.BinaryMessage:
-				println(data)
+				handlingBinaryMessage(data)
+				break
 			}
 			return true
 		})
 	}
+}
+
+type Message struct {
+	messageType string
+	value       any
+}
+
+type MessageHandler interface {
+	handlingMessage(message Message)
+}
+
+type KeyDownHandling struct{}
+type KeyDownValue struct {
+	key string
+}
+
+func (self KeyDownHandling) handlingMessage(message Message) {
+	keyDownValue := message.value.(KeyDownValue)
+	robotgo.KeyDown(keyDownValue.key)
+}
+
+type KeyUpHandling struct{}
+type KeyUpValue struct {
+	key string
+}
+
+func (self KeyUpHandling) handlingMessage(message Message) {
+	keyUpValue := message.value.(KeyUpValue)
+	robotgo.KeyUp(keyUpValue.key)
+}
+
+type MouseClickHandling struct{}
+type MouseClickValue struct {
+	key      string
+	isDouble bool
+}
+
+func (self MouseClickHandling) handlingMessage(message Message) {
+	mouseClickValue := message.value.(MouseClickValue)
+	robotgo.Click(mouseClickValue.key, mouseClickValue.isDouble)
+}
+
+type MoveSmoothHandling struct{}
+type MoveSmoothValue struct {
+	x, y int
+}
+
+func (self MoveSmoothHandling) handlingMessage(message Message) {
+	position := message.value.(MoveSmoothValue)
+	robotgo.MoveSmooth(position.x, position.y)
+}
+
+type ScrollMouseHandling struct{}
+type ScrollMouseValue struct {
+	x, y int
+}
+
+func (self ScrollMouseHandling) handlingMessage(message Message) {
+	scrollMouseValue := message.value.(ScrollMouseValue)
+	robotgo.Scroll(scrollMouseValue.x, scrollMouseValue.y)
+}
+
+type MouseToggleHandling struct{}
+type MouseToggleValue struct {
+	key         string
+	leftOrRight string
+}
+
+func (self MouseToggleHandling) handlingMessage(message Message) {
+	mouseToggleValue := message.value.(MouseToggleValue)
+	robotgo.Toggle(mouseToggleValue.key, mouseToggleValue.leftOrRight)
+}
+
+var messageHandlerMap = map[string]MessageHandler{
+	"KeyDown":     &KeyDownHandling{},
+	"KeyUp":       &KeyUpHandling{},
+	"MouseClick":  &MouseClickHandling{},
+	"MoveSmooth":  &MoveSmoothHandling{},
+	"ScrollMouse": &ScrollMouseHandling{},
+	"MouseToggle": &MouseToggleHandling{},
+}
+
+func handlingTextMessage(data []byte) {
+	var message Message
+	json.Unmarshal(data, &message)
+	handler := messageHandlerMap[message.messageType]
+	handler.handlingMessage(message)
+}
+
+func handlingBinaryMessage(data []byte) {
+
 }
 
 /*
