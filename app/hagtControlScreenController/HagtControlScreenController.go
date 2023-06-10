@@ -2,6 +2,7 @@ package hagtControlScreenController
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/json"
 	"github.com/go-vgo/robotgo"
 	"github.com/gorilla/websocket"
@@ -57,10 +58,23 @@ func Foreach(f func(k any, conn *websocket.Conn, data []byte), data []byte) {
 }
 
 func Send(k any, conn *websocket.Conn, data []byte) {
+	data = compressedData(data)
 	if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 		conns.Delete(k)
 		conn.Close()
 	}
+}
+
+func compressedData(data []byte) []byte {
+	var buf bytes.Buffer
+	zw := zlib.NewWriter(&buf)
+	if _, err := zw.Write(data); err != nil {
+		panic(err)
+	}
+	if err := zw.Close(); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
 }
 
 func handlingEvent() {
@@ -69,6 +83,8 @@ func handlingEvent() {
 			socketConn := conn.(*websocket.Conn)
 			messageType, data, err := socketConn.ReadMessage()
 			if err != nil {
+				conns.Delete(k)
+				socketConn.Close()
 				return false
 			}
 			switch messageType {
@@ -85,8 +101,8 @@ func handlingEvent() {
 }
 
 type Message struct {
-	messageType string
-	value       any
+	MessageType string
+	Value       map[string]any
 }
 
 type MessageHandler interface {
@@ -94,65 +110,49 @@ type MessageHandler interface {
 }
 
 type KeyDownHandling struct{}
-type KeyDownValue struct {
-	key string
-}
 
 func (self KeyDownHandling) handlingMessage(message Message) {
-	keyDownValue := message.value.(KeyDownValue)
-	robotgo.KeyDown(keyDownValue.key)
+	key := message.Value["key"].(string)
+	robotgo.KeyDown(key)
 }
 
 type KeyUpHandling struct{}
-type KeyUpValue struct {
-	key string
-}
 
 func (self KeyUpHandling) handlingMessage(message Message) {
-	keyUpValue := message.value.(KeyUpValue)
-	robotgo.KeyUp(keyUpValue.key)
+	key := message.Value["key"].(string)
+	robotgo.KeyUp(key)
 }
 
 type MouseClickHandling struct{}
-type MouseClickValue struct {
-	key      string
-	isDouble bool
-}
 
 func (self MouseClickHandling) handlingMessage(message Message) {
-	mouseClickValue := message.value.(MouseClickValue)
-	robotgo.Click(mouseClickValue.key, mouseClickValue.isDouble)
+	key := message.Value["key"].(string)
+	isDouble := message.Value["isDouble"].(bool)
+	robotgo.Click(key, isDouble)
 }
 
 type MoveSmoothHandling struct{}
-type MoveSmoothValue struct {
-	x, y int
-}
 
 func (self MoveSmoothHandling) handlingMessage(message Message) {
-	position := message.value.(MoveSmoothValue)
-	robotgo.MoveSmooth(position.x, position.y)
+	x := message.Value["x"].(float64)
+	y := message.Value["y"].(float64)
+	robotgo.Move(int(x), int(y))
 }
 
 type ScrollMouseHandling struct{}
-type ScrollMouseValue struct {
-	x, y int
-}
 
 func (self ScrollMouseHandling) handlingMessage(message Message) {
-	scrollMouseValue := message.value.(ScrollMouseValue)
-	robotgo.Scroll(scrollMouseValue.x, scrollMouseValue.y)
+	x := message.Value["x"].(float64)
+	y := message.Value["y"].(float64)
+	robotgo.Scroll(int(x), int(y))
 }
 
 type MouseToggleHandling struct{}
-type MouseToggleValue struct {
-	key         string
-	leftOrRight string
-}
 
 func (self MouseToggleHandling) handlingMessage(message Message) {
-	mouseToggleValue := message.value.(MouseToggleValue)
-	robotgo.Toggle(mouseToggleValue.key, mouseToggleValue.leftOrRight)
+	key := message.Value["key"].(string)
+	leftOrRight := message.Value["leftOrRight"].(string)
+	robotgo.Toggle(key, leftOrRight)
 }
 
 var messageHandlerMap = map[string]MessageHandler{
@@ -166,8 +166,13 @@ var messageHandlerMap = map[string]MessageHandler{
 
 func handlingTextMessage(data []byte) {
 	var message Message
-	json.Unmarshal(data, &message)
-	handler := messageHandlerMap[message.messageType]
+	if err := json.Unmarshal(data, &message); err != nil {
+		return
+	}
+	handler := messageHandlerMap[message.MessageType]
+	if handler == nil {
+		return
+	}
 	handler.handlingMessage(message)
 }
 
