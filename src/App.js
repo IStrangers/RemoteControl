@@ -6,7 +6,7 @@ import {throttle} from "./util/common";
 
 //192.168.0.102
 //192.168.0.101
-const socketUrl = 'ws:/192.168.0.102:8888/Connection?id=' + new Date().getTime()
+const socketUrl = 'ws:/localhost:8888/Connection?id=' + new Date().getTime()
 const viewType = "Canvas"
 const [webSocket,render] = viewType === "Canvas" ? canvasView(socketUrl) : videoView(socketUrl)
 
@@ -55,7 +55,6 @@ function App() {
     })
   }
   const onMouseMove = throttle((event) => {
-    debugger
     webSocket.sendMessage({
       MessageType: 'MoveSmooth',
       Value: {

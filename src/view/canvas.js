@@ -4,16 +4,19 @@ import {decompressBlob} from "../util/common";
 
 export default function canvasView(socketUrl){
     const img = new Image();
+    let ctx;
     const webSocket = new WBScoket({
         socketUrl: socketUrl,
         timeout: 5000,
         socketMessage: (receive) => {
             const blob = receive.data;
-            decompressBlob(blob, (error, uncompressedData) => {
-                window.URL.revokeObjectURL(img.src);
-                const uncompressedBlob = new Blob([uncompressedData], { type: blob.type });
-                img.src = window.URL.createObjectURL(uncompressedBlob);
-            });
+            // decompressBlob(blob, (error, uncompressedData) => {
+            //     window.URL.revokeObjectURL(img.src);
+            //     const uncompressedBlob = new Blob([uncompressedData], { type: blob.type });
+            //     img.src = window.URL.createObjectURL(uncompressedBlob);
+            // });
+            window.URL.revokeObjectURL(img.src);
+            img.src = window.URL.createObjectURL(blob);
         },
         socketClose: (msg) => {
             console.log('连接关闭: ' + msg);
@@ -33,7 +36,7 @@ export default function canvasView(socketUrl){
         useEffect(() => {
             canvasRef.current.width = window.innerWidth;
             canvasRef.current.height = window.innerHeight;
-            const ctx = canvasRef.current.getContext('2d');
+            ctx = canvasRef.current.getContext('2d');
             window.addEventListener("resize", () => {
                 canvasRef.current.width = window.innerWidth;
                 canvasRef.current.height = window.innerHeight;

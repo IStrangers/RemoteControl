@@ -15,9 +15,10 @@ export default function canvasView(socketUrl){
         timeout: 5000,
         socketMessage: (receive) => {
             const blob = receive.data;
-            decompressBlob(blob,(error, uncompressedData) => {
-                sourceBuffer && sourceBuffer.appendBuffer(uncompressedData);
-            });
+            // decompressBlob(blob,(error, uncompressedData) => {
+            //     sourceBuffer && sourceBuffer.appendBuffer(uncompressedData);
+            // });
+            sourceBuffer && sourceBuffer.appendBuffer(blob);
         },
         socketClose: (msg) => {
             console.log('连接关闭: ' + msg);

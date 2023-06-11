@@ -53,10 +53,7 @@ func sendCurrentImageFrame(data []byte) {
 }
 
 func Foreach(f func(k any, conn *websocket.Conn, data []byte), data []byte) {
-	data = compressedData(data)
-	if bytes.Equal(prevFrameData, data) {
-		return
-	}
+	//data = compressedData(data)
 	conns.Range(func(k, conn any) bool {
 		f(k, conn.(*websocket.Conn), data)
 		return true
