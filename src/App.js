@@ -14,7 +14,7 @@ const [webSocket,render] = (() => {
   if(viewType === "Canvas") {
     return canvasView(socketUrl)
   }
-  if(viewType === "Canvas") {
+  if(viewType === "Video") {
     return videoView(socketUrl)
   }
   if(viewType === "Image") {
