@@ -2,13 +2,25 @@ import './App.css';
 import {useEffect, useRef} from "react";
 import canvasView from "./view/canvas"
 import videoView from  "./view/video"
+import imageView from  "./view/image"
 import {throttle} from "./util/common";
 
 //192.168.0.102
 //192.168.0.101
 const socketUrl = 'ws:/localhost:8888/Connection?id=' + new Date().getTime()
-const viewType = "Canvas"
-const [webSocket,render] = viewType === "Canvas" ? canvasView(socketUrl) : videoView(socketUrl)
+const viewType = "Image"
+
+const [webSocket,render] = (() => {
+  if(viewType === "Canvas") {
+    return canvasView(socketUrl)
+  }
+  if(viewType === "Canvas") {
+    return videoView(socketUrl)
+  }
+  if(viewType === "Image") {
+    return imageView(socketUrl)
+  }
+})()
 
 function App() {
 
