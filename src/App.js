@@ -1,66 +1,22 @@
 import './App.css';
-import WBScoket from './websocket/WebSocket';
-import pako from 'pako'
-import {useRef} from "react";
+import {useEffect, useRef} from "react";
+import canvasView from "./view/canvas"
+import videoView from  "./view/video"
+import {throttle} from "./util/common";
+
+//192.168.0.102
+//192.168.0.101
+const socketUrl = 'ws:/192.168.0.102:8888/Connection?id=' + new Date().getTime()
+const viewType = "Canvas"
+const [webSocket,render] = viewType === "Canvas" ? canvasView(socketUrl) : videoView(socketUrl)
 
 function App() {
 
   const viewRef = useRef()
-  let webSocket;
 
-  const decompress = (blob, callback) => {
-    const fileReader = new FileReader();
-    fileReader.onload = function() {
-      const compressedData = new Uint8Array(fileReader.result);
-      const uncompressedData = pako.inflate(compressedData);
-      const uncompressedBlob = new Blob([uncompressedData], { type: blob.type });
-      callback(null, uncompressedBlob);
-    };
-    fileReader.onerror = function() {
-      callback(new Error('Failed to read the file.'));
-    };
-    fileReader.readAsArrayBuffer(blob);
-  }
-  function getCurrentImageFrame(){
-    let AppHagtControlScreen;
-    let ctx;
-    const img = new Image();
-    img.onload = function(){
-      AppHagtControlScreen.width = window.innerWidth;
-      AppHagtControlScreen.height = window.innerHeight;
-      ctx.drawImage(img,0,0,AppHagtControlScreen.width,AppHagtControlScreen.height);
-    }
-     webSocket = new WBScoket({
-      //192.168.0.102
-      //192.168.0.101
-      socketUrl: 'ws:/localhost:8888/Connection?currentTime=' + new Date().getTime(),
-      timeout: 5000,
-      socketMessage: (receive) => {
-        decompress(receive.data, (error, uncompressedBlob) => {
-          window.URL.revokeObjectURL(img.src);
-          img.src = window.URL.createObjectURL(uncompressedBlob);
-        });
-      },
-      socketClose: (msg) => {
-        console.log(msg);
-        webSocket.close();
-      },
-      socketError: () => {
-        console.log('连接建立失败');
-      },
-      socketOpen: () => {
-        console.log('连接建立成功');
-        AppHagtControlScreen = document.getElementById('AppHagtControlScreen');
-        ctx = AppHagtControlScreen.getContext('2d');
-        window.addEventListener("resize", () => {
-          AppHagtControlScreen.width = window.innerWidth;
-          AppHagtControlScreen.height = window.innerHeight;
-        });
-      }
-    });
-
-    webSocket.connection();
-    viewRef.current.focus();
+  const onContextMenu = (event) => {
+    event.preventDefault();
+    onClick(event)
   }
   const onKeyDown = (event) => {
     webSocket.sendMessage({
@@ -98,25 +54,34 @@ function App() {
       }
     })
   }
-  const onMouseMove = (event) => {
+  const onMouseMove = throttle((event) => {
+    debugger
     webSocket.sendMessage({
       MessageType: 'MoveSmooth',
       Value: {
         x: event.clientX,
-        y: event.clientY
+        y: event.clientY,
+        fw: viewRef.current.clientWidth,
+        fh: viewRef.current.clientHeight
       }
     })
-  }
-  const onContextMenu = (event) => {
-    event.preventDefault();
-    onClick(event)
-  }
-  window.onload = getCurrentImageFrame;
+  },200)
+  const onWheel = throttle((event) => {
+    webSocket.sendMessage({
+      MessageType: 'ScrollMouse',
+      Value: {
+        x: event.clientX,
+        y: event.clientY,
+      }
+    })
+  },200)
+
+  useEffect(() => viewRef.current.focus(),[viewRef])
 
   return (
     <div className="App">
-        <div className="view" ref={viewRef} tabIndex={-1} onContextMenu={onContextMenu} onKeyDown={onKeyDown} onKeyUp={onKeyUp} onClick={onClick} onMouseMove={onMouseMove}>
-          <canvas id="AppHagtControlScreen" className="App-hagt-control-screen"></canvas>
+        <div className="view" ref={viewRef} tabIndex={-1} onContextMenu={onContextMenu} onKeyDown={onKeyDown} onKeyUp={onKeyUp} onClick={onClick} onMouseMove={onMouseMove} onWheel={onWheel}>
+          { render() }
         </div>
     </div>
   );

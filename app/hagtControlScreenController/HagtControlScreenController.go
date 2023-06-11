@@ -24,7 +24,9 @@ var (
 			return true
 		},
 	}
-	conns sync.Map
+	conns           sync.Map
+	prevFrameData   []byte
+	fwidth, fheight = robotgo.GetScreenSize()
 )
 
 func Start() {
@@ -51,14 +53,18 @@ func sendCurrentImageFrame(data []byte) {
 }
 
 func Foreach(f func(k any, conn *websocket.Conn, data []byte), data []byte) {
+	data = compressedData(data)
+	if bytes.Equal(prevFrameData, data) {
+		return
+	}
 	conns.Range(func(k, conn any) bool {
 		f(k, conn.(*websocket.Conn), data)
 		return true
 	})
+	prevFrameData = data
 }
 
 func Send(k any, conn *websocket.Conn, data []byte) {
-	data = compressedData(data)
 	if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 		conns.Delete(k)
 		conn.Close()
@@ -136,6 +142,10 @@ type MoveSmoothHandling struct{}
 func (self MoveSmoothHandling) handlingMessage(message Message) {
 	x := message.Value["x"].(float64)
 	y := message.Value["y"].(float64)
+	fw := message.Value["fw"].(float64)
+	fh := message.Value["fh"].(float64)
+	x = (x / fw) * float64(fwidth)
+	y = (y / fh) * float64(fheight)
 	robotgo.Move(int(x), int(y))
 }
 
@@ -185,8 +195,7 @@ func handlingBinaryMessage(data []byte) {
  */
 func connection(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	print(params)
-	currentTime := params.Get("currentTime")
+	id := params.Get("id")
 	// 完成http应答，在httpheader中放下如下参数
 	var conn *websocket.Conn
 	var err error
@@ -194,7 +203,7 @@ func connection(w http.ResponseWriter, r *http.Request) {
 		// 获取连接失败直接返回
 		return
 	}
-	conns.Store(currentTime, conn)
+	conns.Store(id, conn)
 }
 
 func startServer() {
